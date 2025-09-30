@@ -7,6 +7,7 @@ import feedparser
 import os
 import time
 from dotenv import load_dotenv
+import whisper
 
 load_dotenv()
 # create and parse our args
@@ -20,6 +21,8 @@ api_key = os.getenv('API_KEY')
 api_secret = os.getenv('API_SECRET')
 if not api_key or not api_secret:
     raise ValueError("API keys not found. Please set them in .env")
+
+model = whisper.load_model("base")
 
 query = args.search_query
 url = "https://api.podcastindex.org/api/1.0/search/byterm?q=" + query
@@ -54,6 +57,11 @@ r = requests.post(url, headers=headers)
 
 # if it's successful, dump the contents (in a prettified json-format)
 # else, dump the error code we received
+download_dir = "downloads"
+transcription_dir = "transcriptions"
+os.makedirs(download_dir, exist_ok=True)
+os.makedirs(transcription_dir, exist_ok=True)
+
 if r.status_code == 200:
     data = r.json()
     feeds = data.get("feeds", [])
@@ -77,14 +85,29 @@ if r.status_code == 200:
                 audio_url = entry.enclosures[0].href if entry.enclosures else None
                 if audio_url:
                     filename = os.path.basename(audio_url.split("?")[0])
+                    filepath = os.path.join(download_dir, filename)
+                    
                     print(f"Downloading: {entry.title} -> {filename}")
                     
                     with requests.get(audio_url,stream=True) as resp:
                         resp.raise_for_status()
-                        with open(filename,"wb") as f:
+                        with open(filepath,"wb") as f:
                             for chunk in resp.iter_content(chunk_size=8192):
                                 f.write(chunk)
                     print("Downloaded: ",filename)
+                    result = model.transcribe(filepath, fp16=False, verbose=False)
+
+                    # Save transcript as TXT in transcriptions/
+                    base_name = os.path.splitext(os.path.basename(filename))[0]
+                    txt_out = os.path.join(transcription_dir, f"{base_name}.txt")
+                    
+                    lines = [seg["text"].strip() for seg in result["segments"]]
+                    formatted = "\n".join(lines) + "\n"
+
+                    with open(txt_out, "w", encoding="utf-8") as out:
+                        out.write(formatted)
+
+                    print(f"Transcription saved to: {txt_out}")                    #
                     break
                 else:
                     print("No audio found!")
