@@ -30,8 +30,8 @@ url = "https://api.podcastindex.org/api/1.0/search/byterm?q=" + query
 # uncomment these to make debugging easier.
 # print ('api key: ' + api_key);
 # print ('api secret: ' + api_secret);
-# print ('query: ' + query);
-# print ('url: ' + url);
+print ('query: ' + query)
+print ('url: ' + url)
 
 # the api follows the Amazon style authentication
 # see https://docs.aws.amazon.com/AmazonS3/latest/dev/S3_Authentication2.html
@@ -107,7 +107,7 @@ if r.status_code == 200:
                     with open(txt_out, "w", encoding="utf-8") as out:
                         out.write(formatted)
 
-                    print(f"Transcription saved to: {txt_out}")                    #
+                    print(f"Transcription saved to: {txt_out}")
                     break
                 else:
                     print("No audio found!")
