@@ -22,7 +22,7 @@ api_secret = os.getenv('API_SECRET')
 if not api_key or not api_secret:
     raise ValueError("API keys not found. Please set them in .env")
 
-model = whisper.load_model("base")
+model = whisper.load_model("tiny")
 
 query = args.search_query
 url = "https://api.podcastindex.org/api/1.0/search/byterm?q=" + query
