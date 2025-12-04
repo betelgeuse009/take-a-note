@@ -38,3 +38,4 @@ tqdm==4.67.1
 triton==3.4.0
 typing_extensions==4.15.0
 urllib3==2.5.0
+pyqt6==6.10.0

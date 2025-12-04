@@ -10,7 +10,8 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.import argparse
+# limitations under the License.
+import argparse
 from datetime import date
 import hashlib
 import json
@@ -33,8 +34,13 @@ api_key = os.getenv('API_KEY')
 api_secret = os.getenv('API_SECRET')
 if not api_key or not api_secret:
     raise ValueError("API keys not found. Please set them in .env")
+ 
+# keep models in repo so we don't re-download every run
+download_root = os.path.join(os.path.dirname(__file__), "models_cache")
+os.makedirs(download_root, exist_ok=True)
 
-model = whisper.load_model("tiny")
+model_size = input(f'Select model size: \n {whisper.available_models()}\n').strip()
+model = whisper.load_model(model_size, download_root=download_root)
 
 query = args.search_query
 url = "https://api.podcastindex.org/api/1.0/search/byterm?q=" + query
@@ -107,7 +113,9 @@ if r.status_code == 200:
                             for chunk in resp.iter_content(chunk_size=8192):
                                 f.write(chunk)
                     print("Downloaded: ",filename)
-                    result = model.transcribe(filepath, fp16=False, verbose=False)
+                    lang = input("Language code (e.g., en, fr, es) or leave blank for auto: ").strip() or None
+
+                    result = model.transcribe(filepath, fp16=False, verbose=False, language=lang)
 
                     # Save transcript as TXT in transcriptions/
                     base_name = os.path.splitext(os.path.basename(filename))[0]
@@ -129,4 +137,3 @@ if r.status_code == 200:
         print("No feeds found.")
 else:
     print("Error:", r.status_code, r.text)
-
